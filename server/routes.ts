@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { z } from "zod";
 import { insertRecipeSchema, insertSavedRecipeSchema } from "@shared/schema";
 import { generateAIRecipe, suggestRecipes } from "./gemini";
+import { processChatMessage } from "./chat";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create an API router
@@ -174,6 +175,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Recipe suggestion error:", error);
       res.status(500).json({ message: "Failed to get recipe suggestions" });
+    }
+  });
+  
+  // Chat with recipe assistant
+  apiRouter.post("/recipes/chat", async (req: Request, res: Response) => {
+    try {
+      // Validate request body
+      const validator = z.object({
+        message: z.string()
+      });
+      
+      const { message } = validator.parse(req.body);
+      
+      // Process chat message
+      const chatResponse = await processChatMessage(message);
+      
+      res.json(chatResponse);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      }
+      console.error("Chat processing error:", error);
+      res.status(500).json({ message: "Failed to process chat message" });
     }
   });
   
