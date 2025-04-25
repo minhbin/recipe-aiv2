@@ -12,10 +12,18 @@ export default function Footer() {
             <h2 className="text-xl font-display font-bold">CulinaryAI</h2>
           </div>
           <div className="flex space-x-6 text-gray-600">
-            <Link href="#"><a className="hover:text-primary transition-colors">About</a></Link>
-            <Link href="#"><a className="hover:text-primary transition-colors">Privacy</a></Link>
-            <Link href="#"><a className="hover:text-primary transition-colors">Terms</a></Link>
-            <Link href="#"><a className="hover:text-primary transition-colors">Contact</a></Link>
+            <Link href="#">
+              <div className="hover:text-primary transition-colors cursor-pointer">About</div>
+            </Link>
+            <Link href="#">
+              <div className="hover:text-primary transition-colors cursor-pointer">Privacy</div>
+            </Link>
+            <Link href="#">
+              <div className="hover:text-primary transition-colors cursor-pointer">Terms</div>
+            </Link>
+            <Link href="#">
+              <div className="hover:text-primary transition-colors cursor-pointer">Contact</div>
+            </Link>
           </div>
         </div>
         <div className="mt-6 text-center text-sm text-gray-500">

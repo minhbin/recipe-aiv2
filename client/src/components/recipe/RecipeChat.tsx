@@ -138,9 +138,9 @@ export default function RecipeChat() {
                 <h4 className="font-medium mb-2">Suggested Recipes:</h4>
                 <div className="space-y-2">
                   {suggestedRecipes.map((recipe) => (
-                    <div key={recipe.id} className="block">
+                    <div key={recipe.id}>
                       <Link href={`/recipe/${recipe.id}`}>
-                        <div className="block p-2 text-primary hover:bg-neutral-lightest rounded-md transition-colors cursor-pointer">
+                        <div className="p-2 text-primary hover:bg-neutral-lightest rounded-md transition-colors cursor-pointer">
                           {recipe.title}
                         </div>
                       </Link>

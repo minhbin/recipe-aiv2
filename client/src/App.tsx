@@ -9,6 +9,7 @@ import Footer from "@/components/layout/Footer";
 import Home from "@/pages/Home";
 import RecipeDetailPage from "@/pages/RecipeDetailPage";
 import SavedRecipes from "@/pages/SavedRecipes";
+import ChatWithChef from "@/pages/ChatWithChef";
 
 function Router() {
   return (
@@ -19,6 +20,7 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/recipe/:id" component={RecipeDetailPage} />
           <Route path="/saved-recipes" component={SavedRecipes} />
+          <Route path="/chat" component={ChatWithChef} />
           <Route component={NotFound} />
         </Switch>
       </main>
