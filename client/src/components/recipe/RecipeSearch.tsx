@@ -59,7 +59,7 @@ export default function RecipeSearch() {
     <section className="mb-12">
       <div className="flex flex-col md:flex-row md:items-end gap-6 mb-8">
         <div className="flex-grow">
-          <h2 className="text-2xl font-display font-bold mb-4">Find Your Next Meal</h2>
+          <h2 className="text-2xl font-display font-bold mb-4">Recipe Search</h2>
           <div className="flex items-center">
             <div className="relative flex-grow">
               <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
