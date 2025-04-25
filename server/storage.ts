@@ -446,6 +446,7 @@ export class DatabaseStorage implements IStorage {
 // Initialize sample data in the database
 async function initializeDatabase() {
   try {
+    console.log("Running database initialization");
     const sampleRecipes: InsertRecipe[] = [
       {
         title: "Mediterranean Chicken Salad",
@@ -579,10 +580,27 @@ async function initializeDatabase() {
 
     // Check if recipes already exist
     const existingRecipes = await db.select({ count: sql<number>`count(*)` }).from(recipes);
-    if (existingRecipes[0].count === 0) {
+    console.log("Current recipe count:", existingRecipes[0].count);
+    
+    // Force initialization if no recipes exist (count is 0)
+    // Convert count to number to ensure proper comparison
+    if (Number(existingRecipes[0].count) === 0) {
       console.log("Initializing database with sample recipes...");
-      await db.insert(recipes).values(sampleRecipes);
-      console.log("Sample recipes added successfully!");
+      try {
+        // Ensure all recipes have the correct types for fields
+        const preparedRecipes = sampleRecipes.map(recipe => ({
+          ...recipe,
+          // Set isAIGenerated explicitly if not provided
+          isAIGenerated: recipe.isAIGenerated === undefined ? false : recipe.isAIGenerated,
+          // Ensure imageUrl is null instead of undefined if not provided
+          imageUrl: recipe.imageUrl || null
+        }));
+        
+        await db.insert(recipes).values(preparedRecipes);
+        console.log("Sample recipes added successfully!");
+      } catch (insertError) {
+        console.error("Error inserting sample recipes:", insertError);
+      }
     } else {
       console.log("Database already has recipes, skipping initialization.");
     }
