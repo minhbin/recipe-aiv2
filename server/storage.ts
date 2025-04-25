@@ -78,7 +78,7 @@ export class MemStorage implements IStorage {
   
   async createRecipe(insertRecipe: InsertRecipe): Promise<Recipe> {
     const id = this.recipeIdCounter++;
-    const createdAt = new Date().toISOString();
+    const createdAt = new Date();
     const recipe: Recipe = { ...insertRecipe, id, createdAt };
     this.recipes.set(id, recipe);
     return recipe;
@@ -134,7 +134,7 @@ export class MemStorage implements IStorage {
   
   async saveRecipe(insertSavedRecipe: InsertSavedRecipe): Promise<SavedRecipe> {
     const id = this.savedRecipeIdCounter++;
-    const savedAt = new Date().toISOString();
+    const savedAt = new Date();
     const savedRecipe: SavedRecipe = { ...insertSavedRecipe, id, savedAt };
     this.savedRecipes.set(id, savedRecipe);
     return savedRecipe;
@@ -290,7 +290,7 @@ export class MemStorage implements IStorage {
     // Add all sample recipes
     sampleRecipes.forEach(recipe => {
       const id = this.recipeIdCounter++;
-      const createdAt = new Date().toISOString();
+      const createdAt = new Date();
       this.recipes.set(id, { ...recipe, id, createdAt });
     });
   }
