@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb, timestamp, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // User model
 export const users = pgTable("users", {
@@ -16,6 +17,10 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+export const usersRelations = relations(users, ({ many }) => ({
+  savedRecipes: many(savedRecipes),
+}));
 
 // Recipe model
 export const recipes = pgTable("recipes", {
@@ -41,6 +46,10 @@ export const insertRecipeSchema = createInsertSchema(recipes)
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 export type Recipe = typeof recipes.$inferSelect;
 
+export const recipesRelations = relations(recipes, ({ many }) => ({
+  savedRecipes: many(savedRecipes),
+}));
+
 // SavedRecipe model (many-to-many relationship between users and recipes)
 export const savedRecipes = pgTable("saved_recipes", {
   id: serial("id").primaryKey(),
@@ -54,3 +63,14 @@ export const insertSavedRecipeSchema = createInsertSchema(savedRecipes)
 
 export type InsertSavedRecipe = z.infer<typeof insertSavedRecipeSchema>;
 export type SavedRecipe = typeof savedRecipes.$inferSelect;
+
+export const savedRecipesRelations = relations(savedRecipes, ({ one }) => ({
+  user: one(users, {
+    fields: [savedRecipes.userId],
+    references: [users.id],
+  }),
+  recipe: one(recipes, {
+    fields: [savedRecipes.recipeId],
+    references: [recipes.id],
+  }),
+}));
