@@ -20,21 +20,122 @@ const TAG_CATEGORIES = {
   characteristics: ["Quick", "Healthy", "High-Protein", "Budget-Friendly", "One-Pot"]
 };
 
-// Generate a recipe using Gemini API (simulated for now)
+// Generate a recipe using Gemini API
 export async function generateAIRecipe(request: RecipeGenerationRequest): Promise<InsertRecipe> {
-  // In a real implementation, this would make an API call to Gemini
-  // For demo purposes, we'll generate a structured recipe based on the request
+  const apiKey = process.env.GEMINI_API_KEY;
   
-  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
-  
-  // Here we would make a call to the Gemini API with the apiKey 
-  // Since we don't have access to the actual API in this demo, we'll simulate the response
+  if (!apiKey) {
+    console.error("No Gemini API key found. Set GEMINI_API_KEY in environment variables.");
+    // Fallback to generate a basic recipe without AI
+    return generateFallbackRecipe(request);
+  }
   
   console.log("Generating recipe with request:", request);
-  console.log("Using API Key:", apiKey ? "✓ API key found" : "✗ No API key");
   
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  try {
+    // Create prompt for Gemini
+    const dietaryStr = request.dietaryPreferences ? 
+      `Dietary preferences: ${request.dietaryPreferences.join(", ")}. ` : "";
+    const timeStr = request.cookingTime ? 
+      `The cooking time should be around ${request.cookingTime} minutes. ` : "";
+    
+    const prompt = `Create a detailed recipe based on this request: "${request.description}". ${dietaryStr}${timeStr}
+    
+    Format the response as JSON with these fields:
+    {
+      "title": "Recipe title",
+      "description": "Brief description",
+      "ingredients": ["ingredient 1", "ingredient 2", ...],
+      "instructions": ["step 1", "step 2", ...],
+      "prepTime": (preparation time in minutes),
+      "cookTime": (cooking time in minutes),
+      "servings": (number of servings),
+      "difficulty": "Easy" or "Medium" or "Hard",
+      "tags": ["tag1", "tag2", ...] (up to 5 tags),
+      "nutritionFacts": {
+        "calories": number,
+        "protein": grams,
+        "carbs": grams,
+        "fat": grams
+      }
+    }
+    
+    Ensure all fields are populated. Keep ingredients and instructions concise but clear. Make sure the recipe is realistic and delicious.`;
+
+    // Using fetch directly to the Gemini API
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }]
+        })
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.candidates || !data.candidates[0]?.content?.parts || !data.candidates[0].content.parts[0]?.text) {
+      throw new Error("Invalid response format from Gemini API");
+    }
+    
+    const recipeText = data.candidates[0].content.parts[0].text;
+    
+    // Parse the JSON from the response
+    try {
+      // Find JSON object in the response - look for opening and closing braces
+      const jsonMatch = recipeText.match(/{[\s\S]*}/);
+      const jsonStr = jsonMatch ? jsonMatch[0] : null;
+      
+      if (!jsonStr) {
+        throw new Error("No JSON object found in the response");
+      }
+      
+      const recipeData = JSON.parse(jsonStr);
+      
+      // Select a random image
+      const imageUrl = DEFAULT_IMAGES[Math.floor(Math.random() * DEFAULT_IMAGES.length)];
+      
+      // Create the recipe with the parsed data
+      return {
+        title: recipeData.title,
+        description: recipeData.description,
+        imageUrl,
+        ingredients: recipeData.ingredients,
+        instructions: recipeData.instructions,
+        prepTime: recipeData.prepTime,
+        cookTime: recipeData.cookTime,
+        servings: recipeData.servings,
+        difficulty: recipeData.difficulty,
+        tags: recipeData.tags,
+        nutritionFacts: recipeData.nutritionFacts,
+        isAIGenerated: true
+      };
+    } catch (parseError) {
+      console.error("Error parsing recipe JSON:", parseError);
+      console.log("Raw response:", recipeText);
+      throw new Error("Failed to parse AI-generated recipe");
+    }
+  } catch (error) {
+    console.error("Error generating AI recipe:", error);
+    return generateFallbackRecipe(request);
+  }
+}
+
+// Fallback recipe generation when API fails
+function generateFallbackRecipe(request: RecipeGenerationRequest): InsertRecipe {
+  console.log("Using fallback recipe generation");
   
   // Create a title based on the request description
   let title = "";
@@ -50,22 +151,16 @@ export async function generateAIRecipe(request: RecipeGenerationRequest): Promis
     title = "Homestyle Comfort Casserole";
   }
   
-  // Generate random prep and cook times
+  // Generate times and servings
   const prepTime = Math.floor(Math.random() * 20) + 5;
   const cookTime = request.cookingTime 
-    ? Math.min(request.cookingTime, 60) // respect requested time
+    ? Math.min(request.cookingTime, 60)
     : Math.floor(Math.random() * 45) + 15;
-  
-  // Generate random servings
   const servings = Math.floor(Math.random() * 4) + 2;
-  
-  // Select a random difficulty
   const difficulty = DIFFICULTY_LEVELS[Math.floor(Math.random() * DIFFICULTY_LEVELS.length)];
   
-  // Generate tags based on request
+  // Generate tags
   const tags: string[] = [];
-  
-  // Add dietary preferences as tags
   if (request.dietaryPreferences && request.dietaryPreferences.length > 0) {
     tags.push(...request.dietaryPreferences);
   }
@@ -73,9 +168,7 @@ export async function generateAIRecipe(request: RecipeGenerationRequest): Promis
   // Add random tags from categories
   const addRandomTag = (category: string[]) => {
     const tag = category[Math.floor(Math.random() * category.length)];
-    if (!tags.includes(tag)) {
-      tags.push(tag);
-    }
+    if (!tags.includes(tag)) tags.push(tag);
   };
   
   addRandomTag(TAG_CATEGORIES.cuisines);
@@ -83,11 +176,9 @@ export async function generateAIRecipe(request: RecipeGenerationRequest): Promis
   addRandomTag(TAG_CATEGORIES.characteristics);
   
   // Limit to 5 tags max
-  while (tags.length > 5) {
-    tags.pop();
-  }
+  while (tags.length > 5) tags.pop();
   
-  // Generate random nutrition facts
+  // Generate nutrition facts
   const nutritionFacts = {
     calories: Math.floor(Math.random() * 400) + 200,
     protein: Math.floor(Math.random() * 30) + 10,
@@ -98,102 +189,35 @@ export async function generateAIRecipe(request: RecipeGenerationRequest): Promis
   // Select a random image
   const imageUrl = DEFAULT_IMAGES[Math.floor(Math.random() * DEFAULT_IMAGES.length)];
   
-  // Generate sample ingredients and instructions based on the title
-  let ingredients: string[] = [];
-  let instructions: string[] = [];
+  // Default ingredients and instructions
+  let ingredients = [
+    "2 tablespoons olive oil",
+    "1 onion, diced",
+    "2 cloves garlic, minced",
+    "1 pound protein of choice",
+    "1 bell pepper, sliced",
+    "1 cup vegetables of choice",
+    "1 can (14 oz) diced tomatoes",
+    "2 cups broth or stock",
+    "1 teaspoon mixed herbs",
+    "Salt and pepper to taste"
+  ];
   
-  if (title === "Hearty Vegetarian Chili") {
-    ingredients = [
-      "1 tablespoon olive oil",
-      "1 large onion, diced",
-      "2 bell peppers, diced",
-      "3 cloves garlic, minced",
-      "2 tablespoons chili powder",
-      "1 tablespoon cumin",
-      "1 teaspoon oregano",
-      "1/4 teaspoon cayenne pepper",
-      "2 cans (15 oz each) black beans, drained and rinsed",
-      "1 can (15 oz) kidney beans, drained and rinsed",
-      "1 can (15 oz) diced tomatoes",
-      "1 can (6 oz) tomato paste",
-      "2 cups vegetable broth",
-      "1 cup corn kernels (fresh or frozen)",
-      "Salt and pepper to taste",
-      "Optional toppings: avocado, cilantro, lime wedges, cheese"
-    ];
-    
-    instructions = [
-      "Heat olive oil in a large pot over medium heat.",
-      "Add onion and bell peppers, sauté until softened, about 5 minutes.",
-      "Add garlic and cook for another minute until fragrant.",
-      "Stir in chili powder, cumin, oregano, and cayenne pepper.",
-      "Add black beans, kidney beans, diced tomatoes, tomato paste, and vegetable broth.",
-      "Bring to a boil, then reduce heat and simmer for 25-30 minutes, stirring occasionally.",
-      "Add corn and cook for another 5 minutes.",
-      "Season with salt and pepper to taste.",
-      "Serve hot with your choice of toppings."
-    ];
-  } else if (title === "Lemon Herb Roasted Chicken") {
-    ingredients = [
-      "1 whole chicken (about 4-5 pounds)",
-      "2 lemons, one zested and juiced, one quartered",
-      "3 tablespoons olive oil",
-      "4 cloves garlic, minced",
-      "2 tablespoons fresh rosemary, chopped",
-      "2 tablespoons fresh thyme, chopped",
-      "1 tablespoon fresh sage, chopped",
-      "1 teaspoon salt",
-      "1/2 teaspoon black pepper",
-      "1 onion, quartered",
-      "2 carrots, chunked",
-      "2 celery stalks, chunked"
-    ];
-    
-    instructions = [
-      "Preheat oven to 425°F (220°C).",
-      "Pat chicken dry with paper towels inside and out.",
-      "In a bowl, mix lemon zest, lemon juice, olive oil, garlic, rosemary, thyme, sage, salt, and pepper.",
-      "Rub the herb mixture all over the chicken, including under the skin and inside the cavity.",
-      "Stuff the chicken cavity with the quartered lemon, some onion pieces, and herbs.",
-      "Place remaining onion, carrots, and celery in a roasting pan and place chicken on top.",
-      "Roast for 15 minutes, then reduce heat to 375°F (190°C) and continue roasting for about 1 hour and 15 minutes, or until juices run clear.",
-      "Let chicken rest for 15 minutes before carving.",
-      "Serve with roasted vegetables and pan juices."
-    ];
-  } else {
-    // Generic ingredients and instructions for other recipes
-    ingredients = [
-      "2 tablespoons olive oil",
-      "1 onion, diced",
-      "2 cloves garlic, minced",
-      "1 pound protein of choice (chicken, beef, tofu, etc.)",
-      "1 bell pepper, sliced",
-      "1 cup vegetables of choice",
-      "1 can (14 oz) diced tomatoes",
-      "2 cups broth or stock",
-      "1 teaspoon each of 2-3 spices",
-      "Salt and pepper to taste",
-      "Fresh herbs for garnish"
-    ];
-    
-    instructions = [
-      "Prepare all ingredients before starting to cook.",
-      "Heat oil in a large pan over medium heat.",
-      "Add onion and cook until translucent, about 3-4 minutes.",
-      "Add garlic and cook for 30 seconds until fragrant.",
-      "Add protein and cook until browned or cooked through.",
-      "Add vegetables and cook for 3-5 minutes until slightly softened.",
-      "Add tomatoes, broth, and spices. Bring to a simmer.",
-      "Cook for 15-20 minutes until flavors combine and sauce thickens.",
-      "Season with salt and pepper to taste.",
-      "Garnish with fresh herbs before serving."
-    ];
-  }
+  let instructions = [
+    "Prepare all ingredients before cooking.",
+    "Heat oil in a large pan over medium heat.",
+    "Add onion and cook until translucent, about 3-4 minutes.",
+    "Add garlic and cook for 30 seconds until fragrant.",
+    "Add protein and cook until browned.",
+    "Add vegetables and cook for 3-5 minutes.",
+    "Add remaining ingredients and simmer for 15-20 minutes.",
+    "Season with salt and pepper to taste.",
+    "Serve hot with your favorite sides."
+  ];
   
-  // Create the recipe
   return {
     title,
-    description: `${title} - Generated based on your request: "${request.description}"`,
+    description: `${title} - Based on your request: "${request.description}"`,
     imageUrl,
     ingredients,
     instructions,
@@ -207,14 +231,93 @@ export async function generateAIRecipe(request: RecipeGenerationRequest): Promis
   };
 }
 
-// Get recipe suggestions
+// Get recipe suggestions using Gemini API
 export async function suggestRecipes(query: string): Promise<any[]> {
-  // In a real implementation, this would call the Gemini API
-  // For demo, we'll return some hardcoded suggestions
+  const apiKey = process.env.GEMINI_API_KEY;
   
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 800));
+  if (!apiKey) {
+    console.error("No Gemini API key found for recipe suggestions");
+    return getFallbackSuggestions();
+  }
   
+  try {
+    const prompt = `Based on the query "${query}", suggest 3 recipe ideas. 
+    Provide the response as a JSON array with each recipe having a title and short description:
+    [
+      {
+        "title": "Recipe Title 1",
+        "description": "Brief description of recipe 1"
+      },
+      {
+        "title": "Recipe Title 2",
+        "description": "Brief description of recipe 2"
+      },
+      {
+        "title": "Recipe Title 3",
+        "description": "Brief description of recipe 3"
+      }
+    ]`;
+
+    // Using fetch directly to the Gemini API
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }]
+        })
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.candidates || !data.candidates[0]?.content?.parts || !data.candidates[0].content.parts[0]?.text) {
+      throw new Error("Invalid response format from Gemini API");
+    }
+    
+    const suggestionsText = data.candidates[0].content.parts[0].text;
+    
+    // Parse the JSON from the response
+    try {
+      // Find JSON array in the response
+      const jsonMatch = suggestionsText.match(/\[[\s\S]*\]/);
+      const jsonStr = jsonMatch ? jsonMatch[0] : null;
+      
+      if (!jsonStr) {
+        throw new Error("No JSON array found in the response");
+      }
+      
+      const suggestions = JSON.parse(jsonStr);
+      
+      // Add IDs to the suggestions
+      return suggestions.map((suggestion: any, index: number) => ({
+        id: 1000 + index, // Use high IDs to avoid conflicts with existing recipes
+        title: suggestion.title,
+        description: suggestion.description
+      }));
+    } catch (parseError) {
+      console.error("Error parsing suggestions JSON:", parseError);
+      return getFallbackSuggestions();
+    }
+  } catch (error) {
+    console.error("Error getting recipe suggestions:", error);
+    return getFallbackSuggestions();
+  }
+}
+
+// Fallback suggestions when API fails
+function getFallbackSuggestions(): any[] {
   return [
     {
       id: 101,
