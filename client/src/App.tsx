@@ -10,6 +10,7 @@ import Home from "@/pages/Home";
 import RecipeDetailPage from "@/pages/RecipeDetailPage";
 import SavedRecipes from "@/pages/SavedRecipes";
 import ChatWithChef from "@/pages/ChatWithChef";
+import MealPlanner from "@/pages/MealPlanner";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <main className="flex-grow container mx-auto px-4 py-6">
         <Switch>
           <Route path="/" component={ChatWithChef} />
+          <Route path="/meal-planner" component={MealPlanner} />
           <Route component={NotFound} />
         </Switch>
       </main>
