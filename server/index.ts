@@ -56,15 +56,13 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+  // Get port from environment variable or use default
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+  // Get host from environment variable or use default
+  const host = process.env.HOST || '0.0.0.0';
+  
+  // Remove the reusePort option as it's not universally supported
+  server.listen(port, host, () => {
+    log(`Server running at http://${host}:${port}`);
   });
 })();
