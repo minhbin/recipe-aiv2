@@ -11,6 +11,7 @@ import RecipeDetailPage from "@/pages/RecipeDetailPage";
 import SavedRecipes from "@/pages/SavedRecipes";
 import ChatWithChef from "@/pages/ChatWithChef";
 import MealPlanner from "@/pages/MealPlanner";
+import SavedMealPlans from "@/pages/SavedMealPlans";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
         <Switch>
           <Route path="/" component={ChatWithChef} />
           <Route path="/meal-planner" component={MealPlanner} />
+          <Route path="/saved-meal-plans" component={SavedMealPlans} />
           <Route component={NotFound} />
         </Switch>
       </main>
