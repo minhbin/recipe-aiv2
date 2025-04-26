@@ -23,7 +23,7 @@ export default function RecipeChat() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hi! I'm your recipe assistant. Ask me for any recipe ideas or cooking advice."
+      content: "# Welcome to Recipe AI!\n\nI'm your intelligent cooking companion. Ask me for any recipe ideas, cooking techniques, or food questions. You can request things like:\n\n- Recipes for specific ingredients (\"What can I make with chicken and rice?\")\n- Dishes based on dietary preferences (\"Show me some vegetarian dinner ideas\")\n- Cooking advice (\"How do I cook the perfect steak?\")\n\nWhat would you like to cook today?"
     }
   ]);
   const [input, setInput] = useState("");
@@ -95,11 +95,10 @@ export default function RecipeChat() {
   return (
     <div className="flex flex-col h-[600px] rounded-xl overflow-hidden border border-neutral bg-white shadow-md">
       <div className="bg-primary text-white p-4 flex items-center">
-        <Avatar className="h-8 w-8 mr-2">
-          <AvatarImage src="/chef-avatar.png" />
-          <AvatarFallback>👨‍🍳</AvatarFallback>
-        </Avatar>
-        <h3 className="font-bold">Recipe Chef Assistant</h3>
+        <div className="flex items-center justify-center h-8 w-8 mr-2 bg-white text-primary rounded-full font-bold text-sm">
+          AI
+        </div>
+        <h3 className="font-bold">Recipe AI</h3>
       </div>
       
       {/* Messages container */}
@@ -110,10 +109,9 @@ export default function RecipeChat() {
             className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
           >
             {message.role === "assistant" && (
-              <Avatar className="h-8 w-8 mr-2 mt-1 flex-shrink-0">
-                <AvatarImage src="/chef-avatar.png" />
-                <AvatarFallback>👨‍🍳</AvatarFallback>
-              </Avatar>
+              <div className="flex items-center justify-center h-8 w-8 mr-2 mt-1 flex-shrink-0 bg-primary text-white rounded-full font-bold text-sm">
+                AI
+              </div>
             )}
             <div 
               className={`max-w-[80%] rounded-lg p-4 shadow-sm ${
@@ -193,13 +191,12 @@ export default function RecipeChat() {
         {/* Loading indicator */}
         {isLoading && (
           <div className="flex justify-start">
-            <Avatar className="h-8 w-8 mr-2 mt-1 flex-shrink-0">
-              <AvatarImage src="/chef-avatar.png" />
-              <AvatarFallback>👨‍🍳</AvatarFallback>
-            </Avatar>
+            <div className="flex items-center justify-center h-8 w-8 mr-2 mt-1 flex-shrink-0 bg-primary text-white rounded-full font-bold text-sm">
+              AI
+            </div>
             <div className="max-w-[80%] rounded-lg p-3 bg-neutral-lightest rounded-tl-none flex items-center border border-neutral/10 shadow-sm">
               <LoadingSpinner size="sm" className="mr-2" />
-              <span className="text-gray-600">Chef is cooking up a response...</span>
+              <span className="text-gray-600">Recipe AI is preparing a response...</span>
             </div>
           </div>
         )}
