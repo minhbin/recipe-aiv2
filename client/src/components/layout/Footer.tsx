@@ -8,8 +8,10 @@ export default function Footer() {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center space-x-2 mb-4 md:mb-0">
-            <i className="fas fa-utensils text-primary-dark text-xl"></i>
-            <h2 className="text-xl font-display font-bold">CulinaryAI</h2>
+            <div className="flex items-center justify-center h-7 w-7 bg-primary text-white rounded-full font-bold text-sm">
+              AI
+            </div>
+            <h2 className="text-xl font-display font-bold">Recipe AI</h2>
           </div>
           <div className="flex space-x-6 text-gray-600">
             <Link href="#">
@@ -27,7 +29,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-6 text-center text-sm text-gray-500">
-          © {currentYear} CulinaryAI. All rights reserved. Powered by Gemini AI.
+          © {currentYear} Recipe AI. All rights reserved. Powered by Gemini AI.
         </div>
       </div>
     </footer>
