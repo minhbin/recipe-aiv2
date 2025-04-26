@@ -17,10 +17,7 @@ function Router() {
       <Header />
       <main className="flex-grow container mx-auto px-4 py-6">
         <Switch>
-          <Route path="/" component={Home} />
-          <Route path="/recipe/:id" component={RecipeDetailPage} />
-          <Route path="/saved-recipes" component={SavedRecipes} />
-          <Route path="/chat" component={ChatWithChef} />
+          <Route path="/" component={ChatWithChef} />
           <Route component={NotFound} />
         </Switch>
       </main>
