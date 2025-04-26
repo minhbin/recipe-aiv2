@@ -45,9 +45,25 @@ const defaultWeekPlan: WeekPlan = {
 };
 
 export default function MealPlanner() {
-  const [weekPlan, setWeekPlan] = useState<WeekPlan>(defaultWeekPlan);
+  // Try to load saved meal plan from localStorage on component mount
+  const loadSavedPlan = (): WeekPlan => {
+    if (typeof window !== 'undefined') {
+      const savedPlan = localStorage.getItem('mealPlan');
+      if (savedPlan) {
+        try {
+          return JSON.parse(savedPlan);
+        } catch (e) {
+          console.error('Error parsing saved meal plan:', e);
+        }
+      }
+    }
+    return defaultWeekPlan;
+  };
+
+  const [weekPlan, setWeekPlan] = useState<WeekPlan>(loadSavedPlan);
   const [currentDay, setCurrentDay] = useState<keyof WeekPlan>('monday');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const { toast } = useToast();
   
   const handleAddMeal = (day: keyof WeekPlan, mealType: keyof DayPlan) => {
@@ -174,6 +190,57 @@ export default function MealPlanner() {
     }
   };
   
+  // Save a single day's meal plan
+  const saveDayPlan = (day: keyof WeekPlan) => {
+    setIsSaving(true);
+    try {
+      // Get the current complete plan
+      const currentPlan = { ...weekPlan };
+      
+      // Save it to localStorage
+      localStorage.setItem('mealPlan', JSON.stringify(currentPlan));
+      
+      toast({
+        title: "Day Plan Saved!",
+        description: `Your meal plan for ${day} has been saved.`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error saving day plan:', error);
+      toast({
+        title: "Failed to save plan",
+        description: "There was an error saving your meal plan.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  // Save the entire week's meal plan
+  const saveWeeklyPlan = () => {
+    setIsSaving(true);
+    try {
+      // Save the entire week plan to localStorage
+      localStorage.setItem('mealPlan', JSON.stringify(weekPlan));
+      
+      toast({
+        title: "Weekly Plan Saved!",
+        description: "Your complete meal plan for the week has been saved.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error saving weekly plan:', error);
+      toast({
+        title: "Failed to save plan",
+        description: "There was an error saving your meal plan.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
   const renderMealCard = (day: keyof WeekPlan, mealType: keyof DayPlan) => {
     const meal = weekPlan[day][mealType];
     
@@ -265,7 +332,16 @@ export default function MealPlanner() {
                         'Generate Day Plan'
                       )}
                     </Button>
-                    <Button disabled={isGenerating}>Save Plan</Button>
+                    <Button 
+                      onClick={() => saveDayPlan(day as keyof WeekPlan)}
+                      disabled={isGenerating || isSaving}
+                    >
+                      {isSaving && day === currentDay ? (
+                        <><LoadingSpinner size="sm" className="mr-2" /> Saving...</>
+                      ) : (
+                        'Save Plan'
+                      )}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -286,7 +362,16 @@ export default function MealPlanner() {
               'Generate Full Week Plan'
             )}
           </Button>
-          <Button disabled={isGenerating}>Save Weekly Plan</Button>
+          <Button 
+            onClick={saveWeeklyPlan}
+            disabled={isGenerating || isSaving}
+          >
+            {isSaving ? (
+              <><LoadingSpinner size="sm" className="mr-2" /> Saving...</>
+            ) : (
+              'Save Weekly Plan'
+            )}
+          </Button>
         </div>
       </div>
     </div>
