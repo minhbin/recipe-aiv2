@@ -20,50 +20,87 @@ async function findRelatedRecipes(query: string, limit: number = 3) {
   }));
 }
 
-export async function processChatMessage(message: string) {
+// Simple implementation for direct text completion
+async function fetchTextFromGemini(prompt: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
-  
   if (!apiKey) {
-    console.warn("No Gemini API key found. Using fallback responses.");
-    return processFallbackChat(message);
+    console.warn("No Gemini API key found.");
+    return "";
   }
   
   try {
-    // Initialize Gemini API
-    const genAI = new GoogleGenerativeAI(apiKey);
-    
-    // Use generativeModel directly
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-pro",
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 800,
-        topP: 0.8,
-        topK: 40
+    // Using fetch directly to the Gemini API
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro-latest:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 800,
+            topP: 0.8,
+            topK: 40
+          }
+        })
       }
-    });
+    );
     
-    // Format the prompt according to the API requirements
-    const promptText = "You are a helpful chef assistant providing recipe ideas and cooking advice. " +
-                      "The user is asking about: " + message + "\n\n" +
-                      "Provide a helpful, detailed response with cooking instructions if they're asking for a recipe. " +
-                      "If they're asking for cooking advice, give clear, practical tips. " +
-                      "Focus exclusively on food and cooking topics.";
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+    }
     
-    // Send the message and get a response
-    const result = await model.generateContent(promptText);
-    const response = result.response.text();
+    const data = await response.json();
+    if (data.candidates && data.candidates[0]?.content?.parts && data.candidates[0].content.parts[0]?.text) {
+      return data.candidates[0].content.parts[0].text;
+    }
     
-    // Find related recipes for suggestions
-    const suggestedRecipes = await findRelatedRecipes(message);
+    return "";
+  } catch (error) {
+    console.error("Error fetching from Gemini API:", error);
+    return "";
+  }
+}
+
+export async function processChatMessage(message: string) {
+  try {
+    // Chef prompt for cooking advice
+    const prompt = "You are a helpful chef assistant providing recipe ideas and cooking advice. " +
+                 "The user is asking about: " + message + "\n\n" +
+                 "Provide a helpful, detailed response with cooking instructions if they're asking for a recipe. " +
+                 "If they're asking for cooking advice, give clear, practical tips. " +
+                 "Focus exclusively on food and cooking topics.";
     
-    return {
-      response,
-      recipes: suggestedRecipes
-    };
+    // Get response from Gemini API
+    const response = await fetchTextFromGemini(prompt);
+    
+    // If we got a valid response, return it
+    if (response && response.length > 0) {
+      // Find related recipes for suggestions
+      const suggestedRecipes = await findRelatedRecipes(message);
+      
+      return {
+        response,
+        recipes: suggestedRecipes
+      };
+    }
+    
+    // Otherwise use fallback
+    return processFallbackChat(message);
     
   } catch (error) {
-    console.error("Error with Gemini API:", error);
+    console.error("Error with chat processing:", error);
     return processFallbackChat(message);
   }
 }
