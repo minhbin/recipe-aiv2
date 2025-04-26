@@ -1,73 +1,69 @@
 # Recipe AI
 
-Recipe AI is an AI-powered conversational cooking assistant that provides instant culinary guidance through an intelligent chatbox interface. It delivers personalized recipe generation and cooking support using Google's Gemini API.
+An AI-powered conversational cooking assistant that provides instant culinary guidance through an intelligent chatbox interface, delivering personalized recipe generation and cooking support.
 
 ## Features
 
-- **AI Chat Interface**: Conversational interface for recipe requests and cooking questions
-- **Meal Planner**: Generate and save personalized meal plans for the week
-- **Saved Plans**: View, manage, and clear saved meal plans
+- AI-powered recipe chat interface
+- Personalized recipe recommendations
+- Meal planning functionality
+- Recipe saving and organizing
 
 ## Technology Stack
 
-- **Frontend**: React with TypeScript, Tailwind CSS for styling
-- **Backend**: Express.js server
-- **AI**: Google Gemini AI API integration
-- **Database**: PostgreSQL with Drizzle ORM
-- **State Management**: React Query for data fetching
-- **UI Components**: Customized Shadcn/UI components
+- Frontend: React with TypeScript
+- Backend: Express.js
+- Database: PostgreSQL
+- AI: Google's Gemini API
+- Styling: Tailwind CSS and Shadcn UI
 
-## Getting Started
+## Setup Instructions
 
 ### Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js (v16+)
 - npm or yarn
-- PostgreSQL database
+- PostgreSQL database (a free Neon database is configured by default)
 - Google Gemini API key
 
 ### Installation
 
-1. Clone this repository
-```bash
-git clone https://github.com/yourusername/recipe-ai.git
+1. Clone the repository
+```
+git clone <repository-url>
 cd recipe-ai
 ```
 
 2. Install dependencies
-```bash
+```
 npm install
 ```
 
 3. Set up environment variables
-Create a `.env` file in the root directory with the following variables:
-```
-DATABASE_URL=postgresql://username:password@localhost:5432/recipe_ai
-GEMINI_API_KEY=your_gemini_api_key
-```
+   - The `.env` file contains the necessary environment variables
+   - Update the GEMINI_API_KEY with your API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+   - The DATABASE_URL is pre-configured with a Neon PostgreSQL database
 
-4. Initialize the database
-```bash
+4. Run database migrations
+```
 npm run db:push
 ```
 
-5. Start the development server
-```bash
+5. Start the application
+```
 npm run dev
 ```
 
-## Usage
+For Windows users, you can use the included `start.bat` file to start the application.
 
-- **Chat Interface**: Ask any cooking or recipe related question
-- **Meal Planner**: Generate daily or weekly meal plans
-- **Saved Plans**: Access your saved meal plans
+## Deployment
+
+The application can be deployed to any platform that supports Node.js applications, such as:
+- Vercel
+- Netlify
+- Heroku
+- Railway
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Google Gemini AI for powering the recipe generation
-- Shadcn/UI for the component library
-- Replit for development and hosting services
+MIT
