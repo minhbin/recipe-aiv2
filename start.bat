@@ -13,7 +13,7 @@ npx drizzle-kit push
 
 REM Start the application in development mode
 echo Starting server...
-npx tsx server/index.ts
+npx cross-env NODE_ENV=development tsx server/index.ts
 
 echo.
 echo If the server doesn't start, make sure you have run:
