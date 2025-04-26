@@ -32,9 +32,9 @@ export async function processChatMessage(message: string) {
     // Initialize Gemini API
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // Use generativeModel directly without chat session
+    // Use generativeModel directly
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
+      model: "gemini-pro",
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 800,
@@ -43,19 +43,15 @@ export async function processChatMessage(message: string) {
       }
     });
     
-    // Create the prompt with cooking context
-    const prompt = {
-      parts: [{
-        text: "You are a helpful chef assistant providing recipe ideas and cooking advice. " +
-             "The user is asking about: " + message + "\n\n" +
-             "Provide a helpful, detailed response with cooking instructions if they're asking for a recipe. " +
-             "If they're asking for cooking advice, give clear, practical tips. " +
-             "Focus exclusively on food and cooking topics."
-      }]
-    };
+    // Format the prompt according to the API requirements
+    const promptText = "You are a helpful chef assistant providing recipe ideas and cooking advice. " +
+                      "The user is asking about: " + message + "\n\n" +
+                      "Provide a helpful, detailed response with cooking instructions if they're asking for a recipe. " +
+                      "If they're asking for cooking advice, give clear, practical tips. " +
+                      "Focus exclusively on food and cooking topics.";
     
     // Send the message and get a response
-    const result = await model.generateContent(prompt);
+    const result = await model.generateContent(promptText);
     const response = result.response.text();
     
     // Find related recipes for suggestions
