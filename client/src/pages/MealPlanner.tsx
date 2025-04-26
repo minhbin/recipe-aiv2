@@ -253,8 +253,19 @@ export default function MealPlanner() {
                   {renderMealCard(day as keyof WeekPlan, 'dinner')}
                   
                   <div className="flex justify-end mt-4">
-                    <Button variant="outline" className="mr-2">Generate Day Plan</Button>
-                    <Button>Save Plan</Button>
+                    <Button 
+                      variant="outline" 
+                      className="mr-2" 
+                      onClick={() => generateDayPlan(day as keyof WeekPlan)}
+                      disabled={isGenerating}
+                    >
+                      {isGenerating && day === currentDay ? (
+                        <><LoadingSpinner size="sm" className="mr-2" /> Generating...</>
+                      ) : (
+                        'Generate Day Plan'
+                      )}
+                    </Button>
+                    <Button disabled={isGenerating}>Save Plan</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -263,8 +274,19 @@ export default function MealPlanner() {
         </Tabs>
         
         <div className="mt-8 flex justify-end">
-          <Button variant="outline" className="mr-2">Generate Full Week Plan</Button>
-          <Button>Save Weekly Plan</Button>
+          <Button 
+            variant="outline" 
+            className="mr-2" 
+            onClick={generateFullWeekPlan}
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <><LoadingSpinner size="sm" className="mr-2" /> Generating Full Week...</>
+            ) : (
+              'Generate Full Week Plan'
+            )}
+          </Button>
+          <Button disabled={isGenerating}>Save Weekly Plan</Button>
         </div>
       </div>
     </div>
