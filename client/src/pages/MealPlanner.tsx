@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 type Meal = {
   id: number;
@@ -45,6 +47,8 @@ const defaultWeekPlan: WeekPlan = {
 export default function MealPlanner() {
   const [weekPlan, setWeekPlan] = useState<WeekPlan>(defaultWeekPlan);
   const [currentDay, setCurrentDay] = useState<keyof WeekPlan>('monday');
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const { toast } = useToast();
   
   const handleAddMeal = (day: keyof WeekPlan, mealType: keyof DayPlan) => {
     // In a real application, this would open a modal or navigate to a recipe selection page
@@ -72,6 +76,102 @@ export default function MealPlanner() {
         [mealType]: null
       }
     }));
+  };
+  
+  const generateDayPlan = async (day: keyof WeekPlan) => {
+    setIsGenerating(true);
+    
+    try {
+      const response = await fetch('/api/meal-planner/generate-day', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ day }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate meal plan');
+      }
+      
+      const mealPlan = await response.json();
+      
+      // Update the day's meal plan
+      setWeekPlan(prev => ({
+        ...prev,
+        [day]: {
+          breakfast: mealPlan.breakfast || null,
+          lunch: mealPlan.lunch || null,
+          dinner: mealPlan.dinner || null
+        }
+      }));
+      
+      toast({
+        title: "Meal Plan Generated!",
+        description: `Your ${day} meal plan is ready.`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error generating meal plan:', error);
+      toast({
+        title: "Failed to generate meal plan",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
+  const generateFullWeekPlan = async () => {
+    setIsGenerating(true);
+    
+    try {
+      // Generate meal plans for each day one by one
+      const days: (keyof WeekPlan)[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      const newWeekPlan = { ...weekPlan };
+      
+      // Sequentially generate meal plans for each day to avoid overwhelming the API
+      for (const day of days) {
+        const response = await fetch('/api/meal-planner/generate-day', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ day }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to generate meal plan for ${day}`);
+        }
+        
+        const mealPlan = await response.json();
+        
+        newWeekPlan[day] = {
+          breakfast: mealPlan.breakfast || null,
+          lunch: mealPlan.lunch || null,
+          dinner: mealPlan.dinner || null
+        };
+      }
+      
+      // Update the entire week plan
+      setWeekPlan(newWeekPlan);
+      
+      toast({
+        title: "Full Week Plan Generated!",
+        description: "Your complete meal plan for the week is ready.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error generating full week plan:', error);
+      toast({
+        title: "Failed to generate full week plan",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
   
   const renderMealCard = (day: keyof WeekPlan, mealType: keyof DayPlan) => {

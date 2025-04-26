@@ -21,7 +21,7 @@ async function findRelatedRecipes(query: string, limit: number = 3) {
 }
 
 // Simple implementation for direct text completion
-async function fetchTextFromGemini(prompt: string): Promise<string> {
+export async function fetchTextFromGemini(prompt: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
   if (!apiKey) {
     console.warn("No Gemini API key found.");

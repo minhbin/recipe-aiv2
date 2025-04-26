@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { z } from "zod";
 import { insertRecipeSchema, insertSavedRecipeSchema } from "@shared/schema";
 import { generateAIRecipe, suggestRecipes } from "./gemini";
-import { processChatMessage } from "./chat";
+import { processChatMessage, fetchTextFromGemini } from "./chat";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create an API router
@@ -198,6 +198,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Chat processing error:", error);
       res.status(500).json({ message: "Failed to process chat message" });
+    }
+  });
+  
+  // Generate meal plan for a day
+  apiRouter.post("/meal-planner/generate-day", async (req: Request, res: Response) => {
+    try {
+      const { day } = req.body;
+      if (!day) {
+        return res.status(400).json({ error: "Day is required" });
+      }
+      
+      // Use Gemini to generate meal plan for the day
+      const prompt = `Create a healthy meal plan for ${day}. For each meal (breakfast, lunch, dinner), provide a title and a brief description. Format the response as a JSON object with the following structure:
+      {
+        "breakfast": { "title": "Meal title", "description": "Brief description" },
+        "lunch": { "title": "Meal title", "description": "Brief description" },
+        "dinner": { "title": "Meal title", "description": "Brief description" }
+      }
+      Make all meals healthy, varied, and interesting.`;
+      
+      let geminiResponse;
+      try {
+        // Using the Gemini integration
+        geminiResponse = await fetchTextFromGemini(prompt);
+        
+        // Extract the JSON from the response
+        const jsonMatch = geminiResponse.match(/```json\n([\s\S]*?)\n```/) || 
+                         geminiResponse.match(/\{[\s\S]*\}/);
+                         
+        if (jsonMatch) {
+          const jsonStr = jsonMatch[1] || jsonMatch[0];
+          const mealPlan = JSON.parse(jsonStr);
+          
+          // Add IDs to each meal
+          if (mealPlan.breakfast) mealPlan.breakfast.id = Math.floor(Math.random() * 1000);
+          if (mealPlan.lunch) mealPlan.lunch.id = Math.floor(Math.random() * 1000);
+          if (mealPlan.dinner) mealPlan.dinner.id = Math.floor(Math.random() * 1000);
+          
+          return res.json(mealPlan);
+        } else {
+          throw new Error("Failed to parse meal plan from AI response");
+        }
+      } catch (error) {
+        console.error("Error with Gemini meal plan generation:", error);
+        // Fallback data in case of error
+        return res.json({
+          breakfast: { 
+            id: Math.floor(Math.random() * 1000),
+            title: "Healthy Breakfast Bowl", 
+            description: "Oatmeal with fresh berries, banana slices, and a drizzle of honey"
+          },
+          lunch: { 
+            id: Math.floor(Math.random() * 1000),
+            title: "Mediterranean Salad", 
+            description: "Mixed greens with cucumber, tomatoes, feta cheese, olives, and grilled chicken" 
+          },
+          dinner: { 
+            id: Math.floor(Math.random() * 1000),
+            title: "Baked Salmon", 
+            description: "Herb-crusted salmon with roasted vegetables and quinoa" 
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error generating meal plan:", error);
+      res.status(500).json({ error: "Failed to generate meal plan" });
     }
   });
   
