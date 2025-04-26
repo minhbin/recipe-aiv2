@@ -16,6 +16,7 @@ type Message = {
 type RecipeLink = {
   id: number;
   title: string;
+  description?: string;
 }
 
 export default function RecipeChat() {
@@ -108,40 +109,122 @@ export default function RecipeChat() {
             key={index} 
             className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
           >
+            {message.role === "assistant" && (
+              <Avatar className="h-8 w-8 mr-2 mt-1 flex-shrink-0">
+                <AvatarImage src="/chef-avatar.png" />
+                <AvatarFallback>👨‍🍳</AvatarFallback>
+              </Avatar>
+            )}
             <div 
-              className={`max-w-[80%] rounded-lg p-3 ${
+              className={`max-w-[80%] rounded-lg p-4 shadow-sm ${
                 message.role === "user" 
                   ? "bg-primary text-white rounded-tr-none" 
-                  : "bg-neutral-lightest rounded-tl-none"
+                  : "bg-neutral-lightest rounded-tl-none border border-neutral/10"
               }`}
             >
-              {message.content}
+              {message.role === "assistant" ? (
+                <div className="prose prose-sm max-w-none text-gray-800">
+                  {message.content.split('\n').map((paragraph, i) => {
+                    if (!paragraph.trim()) return null;
+                    
+                    // Handle special formatting
+                    if (paragraph.startsWith('# ')) {
+                      return (
+                        <h3 key={i} className="text-lg font-bold mt-3 mb-2 text-primary">
+                          {paragraph.substring(2)}
+                        </h3>
+                      );
+                    } else if (paragraph.startsWith('## ')) {
+                      return (
+                        <h4 key={i} className="text-md font-semibold mt-3 mb-1 text-primary/90">
+                          {paragraph.substring(3)}
+                        </h4>
+                      );
+                    } else if (paragraph.startsWith('- ')) {
+                      return (
+                        <div key={i} className="ml-4 mb-2 flex">
+                          <span className="mr-2">•</span>
+                          <span>{paragraph.substring(2)}</span>
+                        </div>
+                      );
+                    } else if (paragraph.match(/^\d+\.\s/)) {
+                      return (
+                        <div key={i} className="flex mb-2">
+                          <span className="font-semibold mr-2">{paragraph.match(/^\d+\./)?.[0]}</span>
+                          <span>{paragraph.replace(/^\d+\.\s/, '')}</span>
+                        </div>
+                      );
+                    } else {
+                      // Handle emphasis and strong elements
+                      if (paragraph.startsWith('*') && paragraph.endsWith('*')) {
+                        return (
+                          <p key={i} className="mb-2 last:mb-0">
+                            <em>{paragraph.substring(1, paragraph.length - 1).trim()}</em>
+                          </p>
+                        );
+                      } else if (paragraph.startsWith('**') && paragraph.endsWith('**')) {
+                        return (
+                          <p key={i} className="mb-2 last:mb-0">
+                            <strong>{paragraph.substring(2, paragraph.length - 2)}</strong>
+                          </p>
+                        );
+                      } else {
+                        return (
+                          <p key={i} className="mb-2 last:mb-0">
+                            {paragraph}
+                          </p>
+                        );
+                      }
+                    }
+                  })}
+                </div>
+              ) : (
+                message.content
+              )}
             </div>
+            {message.role === "user" && (
+              <Avatar className="h-8 w-8 ml-2 mt-1 flex-shrink-0 bg-primary">
+                <AvatarFallback className="text-white">You</AvatarFallback>
+              </Avatar>
+            )}
           </div>
         ))}
         
         {/* Loading indicator */}
         {isLoading && (
           <div className="flex justify-start">
-            <div className="max-w-[80%] rounded-lg p-3 bg-neutral-lightest rounded-tl-none flex items-center">
+            <Avatar className="h-8 w-8 mr-2 mt-1 flex-shrink-0">
+              <AvatarImage src="/chef-avatar.png" />
+              <AvatarFallback>👨‍🍳</AvatarFallback>
+            </Avatar>
+            <div className="max-w-[80%] rounded-lg p-3 bg-neutral-lightest rounded-tl-none flex items-center border border-neutral/10 shadow-sm">
               <LoadingSpinner size="sm" className="mr-2" />
-              <span className="text-gray-600">Thinking...</span>
+              <span className="text-gray-600">Chef is cooking up a response...</span>
             </div>
           </div>
         )}
         
         {/* Recipe suggestions */}
         {suggestedRecipes.length > 0 && (
-          <div className="flex justify-start">
-            <Card className="w-full max-w-[80%]">
-              <CardContent className="p-4">
-                <h4 className="font-medium mb-2">Suggested Recipes:</h4>
-                <div className="space-y-2">
+          <div className="flex justify-start pl-10">
+            <Card className="w-full max-w-[80%] shadow-md border-neutral/20 overflow-hidden">
+              <div className="bg-primary/10 p-3 border-b border-neutral/10">
+                <h4 className="font-medium text-primary">Related Recipes You Might Like</h4>
+              </div>
+              <CardContent className="p-0">
+                <div className="divide-y divide-neutral/10">
                   {suggestedRecipes.map((recipe) => (
                     <div key={recipe.id}>
                       <Link href={`/recipe/${recipe.id}`}>
-                        <div className="p-2 text-primary hover:bg-neutral-lightest rounded-md transition-colors cursor-pointer">
-                          {recipe.title}
+                        <div className="p-3 hover:bg-neutral-lightest transition-colors cursor-pointer">
+                          <div className="font-medium text-primary hover:text-primary/80">
+                            {recipe.title}
+                          </div>
+                          {recipe.description && (
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                              {recipe.description}
+                            </p>
+                          )}
                         </div>
                       </Link>
                     </div>
