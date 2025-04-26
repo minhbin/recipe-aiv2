@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Recipe AI
 
 An AI-powered conversational cooking assistant that provides instant culinary guidance through an intelligent chatbox interface, delivering personalized recipe generation and cooking support.
@@ -67,3 +68,6 @@ The application can be deployed to any platform that supports Node.js applicatio
 ## License
 
 MIT
+=======
+# RecipeAiv2
+>>>>>>> 74a13e1d1f8f7e7f913dd92efc7544e46ae2e59b
