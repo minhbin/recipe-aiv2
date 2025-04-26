@@ -31,22 +31,31 @@ export async function processChatMessage(message: string) {
   try {
     // Initialize Gemini API
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     
-    // Create a chat session
-    const chat = model.startChat({
+    // Use generativeModel directly without chat session
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 800,
-      },
-      systemInstruction: `You are a helpful recipe assistant. When users ask for recipes, provide detailed, 
-      easy-to-follow instructions including ingredients and cooking steps. Focus on being helpful and detailed 
-      about cooking techniques and ingredients. If the user asks a general cooking question, provide a helpful response.
-      If you're asked about other topics, politely steer the conversation back to cooking and recipes.`,
+        topP: 0.8,
+        topK: 40
+      }
     });
     
+    // Create the prompt with cooking context
+    const prompt = {
+      parts: [{
+        text: "You are a helpful chef assistant providing recipe ideas and cooking advice. " +
+             "The user is asking about: " + message + "\n\n" +
+             "Provide a helpful, detailed response with cooking instructions if they're asking for a recipe. " +
+             "If they're asking for cooking advice, give clear, practical tips. " +
+             "Focus exclusively on food and cooking topics."
+      }]
+    };
+    
     // Send the message and get a response
-    const result = await chat.sendMessage(message);
+    const result = await model.generateContent(prompt);
     const response = result.response.text();
     
     // Find related recipes for suggestions
